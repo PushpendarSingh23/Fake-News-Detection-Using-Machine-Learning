@@ -1,0 +1,52 @@
+{
+  "status": "dataset_pending",
+  "verification_status": "unverified",
+  "note": "Genuine ISOT dataset (dataset/Fake.csv and dataset/True.csv) was absent during Phase 2 setup. Existing Logistic Regression artifact is active for inference, but its 98.94% accuracy remains unverified until offline training script is executed with the genuine dataset.",
+  "dataset_info": {
+    "fake_path": "dataset/Fake.csv",
+    "true_path": "dataset/True.csv",
+    "is_available": false
+  },
+  "models": {
+    "logistic_regression": {
+      "model_key": "logistic_regression",
+      "display_name": "Logistic Regression",
+      "artifact_path": "models/model.pkl",
+      "status": "active_legacy_artifact",
+      "verified": false,
+      "unverified_claimed_accuracy": 0.9894256455921638,
+      "accuracy": null,
+      "precision": null,
+      "recall": null,
+      "f1_score": null,
+      "roc_auc": null,
+      "confusion_matrix": null
+    },
+    "random_forest": {
+      "model_key": "random_forest",
+      "display_name": "Random Forest",
+      "artifact_path": "models/model_rf.pkl",
+      "status": "pending_dataset",
+      "verified": false,
+      "accuracy": null,
+      "precision": null,
+      "recall": null,
+      "f1_score": null,
+      "roc_auc": null,
+      "confusion_matrix": null
+    },
+    "svm": {
+      "model_key": "svm",
+      "display_name": "Support Vector Machine",
+      "artifact_path": "models/model_svm.pkl",
+      "status": "pending_dataset",
+      "verified": false,
+      "accuracy": null,
+      "precision": null,
+      "recall": null,
+      "f1_score": null,
+      "roc_auc": null,
+      "confusion_matrix": null
+    }
+  }
+}

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}Analyze News - Fake News Detection{% endblock %}
+
+{% block content %}
+<section class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card__header">
+    <div>
+      <h2 style="margin: 0;"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>News Authenticity Analyzer</h2>
+      <p class="muted" style="margin: 4px 0 0; font-size: 13.5px;">
+        Perform text pre-processing, TF-IDF feature extraction, and multi-model classification.
+      </p>
+    </div>
+    {% if session.get('user_id') %}
+      <a class="btn btn--secondary btn--sm" href="{{ url_for('prediction.history') }}">
+        <i class="fa-solid fa-clock-rotate-left me-1"></i> My History
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="divider"></div>
+
+  <form method="post" action="{{ url_for('prediction.predict_ui') }}" enctype="multipart/form-data" class="form" id="predictForm">
+    
+    <!-- 1. Model Selection -->
+    <div>
+      <label class="label" style="font-weight: 700; color: var(--text); display: block; margin-bottom: 8px;">
+        <i class="fa-solid fa-microchip text-primary me-1"></i> Select Machine Learning Model:
+      </label>
+      
+      <div class="model-selector-group">
+        {% for m in available_models %}
+          <label class="model-radio-card {% if m.key == 'logistic_regression' %}active{% endif %}">
+            <input type="radio" name="model" value="{{ m.key }}" {% if m.key == 'logistic_regression' %}checked{% endif %} onchange="updateModelSelection(this)" />
+            <div class="model-radio-header">
+              <span class="model-radio-title">{{ m.name }}</span>
+              <span class="badge {{ m.badge_class }}" style="font-size: 11px; padding: 2px 8px;">
+                {{ m.badge }}
+              </span>
+            </div>
+            <div class="muted" style="font-size: 12px; line-height: 1.4;">
+              {{ m.description }}
+            </div>
+          </label>
+        {% endfor %}
+      </div>
+      <div class="muted" style="font-size: 12px; margin-top: -8px; margin-bottom: 14px;">
+        <i class="fa-solid fa-circle-info text-primary me-1"></i>
+        <em>Note: If a model with pending training is selected, inference will safely execute via the verified active baseline.</em>
+      </div>
+    </div>
+
+    <!-- 2. Text Input Area -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <label class="label" for="predict_text" style="font-weight: 700; color: var(--text);">
+          <i class="fa-solid fa-newspaper text-primary me-1"></i> News Article Content / Claim:
+        </label>
+        <div class="sample-pill-group" style="margin: 0;">
+          <span class="text-muted" style="font-size: 12px;">Quick load:</span>
+          <button type="button" class="btn-sample" onclick="insertSample('fake')"><i class="fa-solid fa-triangle-exclamation text-danger me-1"></i>Sample Fake</button>
+          <button type="button" class="btn-sample" onclick="insertSample('real')"><i class="fa-solid fa-circle-check text-success me-1"></i>Sample Real</button>
+          <button type="button" class="btn-sample" onclick="resetTextInput()"><i class="fa-solid fa-trash me-1"></i>Clear</button>
+        </div>
+      </div>
+
+      <textarea class="textarea" id="predict_text" name="text" rows="8" placeholder="Paste full article body, claim, or press release here... (e.g., minimum 10 characters recommended)" oninput="updateWordCount()"></textarea>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 12px;" class="muted">
+        <span id="charCount">0 characters | 0 words</span>
+        <span>Supports multi-paragraph news text</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 3. File Upload Option -->
+    <div>
+      <label class="label" style="font-weight: 700; color: var(--text); margin-bottom: 4px;">
+        <i class="fa-solid fa-file-import text-primary me-1"></i> Or Upload Document File (.txt, .csv, .json):
+      </label>
+      <input class="input" type="file" id="predict_file" name="file" accept=".txt,.csv,.json" />
+      <div class="muted" style="font-size: 12px; margin-top: 4px;">
+        Accepts plain text (.txt), comma-separated text files (.csv), or structured JSON documents (.json).
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Action Buttons -->
+    <div class="actions" style="margin-top: 6px;">
+      <button class="btn" type="submit" id="submitBtn">
+        <i class="fa-solid fa-bolt me-1"></i> Analyze & Classify
+      </button>
+      <button class="btn btn--secondary" type="button" onclick="resetFormFull()">
+        <i class="fa-solid fa-rotate-left me-1"></i> Reset Form
+      </button>
+      <a class="btn btn--secondary" href="{{ url_for('dashboard.home') }}">
+        <i class="fa-solid fa-arrow-left me-1"></i> Cancel
+      </a>
+    </div>
+
+  </form>
+
+  <div class="divider"></div>
+
+  <!-- Status / Audit Guidance -->
+  {% if session.get('user_id') %}
+    <div class="muted" style="font-size: 13px;">
+      <i class="fa-solid fa-cloud-arrow-up text-success me-1"></i>
+      Authenticated session active: Every analysis is logged to your <a href="{{ url_for('prediction.history') }}" style="color: var(--primary);">prediction history</a> and summarized in your analytics dashboard.
+    </div>
+  {% else %}
+    <div class="muted" style="font-size: 13px;">
+      <i class="fa-solid fa-user-clock text-warning me-1"></i>
+      Guest demonstration mode: You can test predictions freely. To save prediction history and access personalized charts, <a href="{{ url_for('auth.login') }}" style="color: var(--primary);">log in</a> or <a href="{{ url_for('auth.register') }}" style="color: var(--primary);">create an account</a>.
+    </div>
+  {% endif %}
+
+</section>
+
+<!-- Script for Interactive Controls -->
+<script>
+  function updateModelSelection(radio) {
+    var cards = document.querySelectorAll('.model-radio-card');
+    cards.forEach(function(c) { c.classList.remove('active'); });
+    if (radio && radio.closest) {
+      var card = radio.closest('.model-radio-card');
+      if (card) card.classList.add('active');
+    }
+  }
+
+  function insertSample(type) {
+    var ta = document.getElementById('predict_text');
+    if (!ta) return;
+    if (type === 'fake') {
+      ta.value = "LEAKED MEMO: Pentagon whistleblower discloses classified project engineering weather anomalies over foreign territories. International tribunals prepare secret warrants while mainstream news outlets suppress coverage.";
+    } else if (type === 'real') {
+      ta.value = "The United States Department of the Treasury released quarterly economic indicators today showing consumer spending expanded at a moderate annual rate of 2.1 percent, closely aligning with macroeconomic forecasts released earlier this month.";
+    }
+    updateWordCount();
+    ta.focus();
+  }
+
+  function resetTextInput() {
+    var ta = document.getElementById('predict_text');
+    if (ta) {
+      ta.value = '';
+      updateWordCount();
+      ta.focus();
+    }
+  }
+
+  function resetFormFull() {
+    var form = document.getElementById('predictForm');
+    if (form) {
+      form.reset();
+      updateWordCount();
+      var firstRadio = form.querySelector('input[name="model"][value="logistic_regression"]');
+      if (firstRadio) {
+        firstRadio.checked = true;
+        updateModelSelection(firstRadio);
+      }
+    }
+  }
+
+  function updateWordCount() {
+    var ta = document.getElementById('predict_text');
+    var counter = document.getElementById('charCount');
+    if (!ta || !counter) return;
+    var text = ta.value.trim();
+    var chars = ta.value.length;
+    var words = text ? text.split(/\s+/).length : 0;
+    counter.textContent = chars + ' characters | ' + words + ' words';
+  }
+</script>
+{% endblock %}

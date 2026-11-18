@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}AI-Assisted Fake News Detection - Academic ML Architecture{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<section class="hero-banner">
+  <div class="badge-row">
+    <span class="badge badge--tech"><i class="fa-solid fa-graduation-cap me-1"></i> B.Tech Final Year Project</span>
+    <span class="badge badge--tech"><i class="fa-brands fa-python me-1"></i> Flask Backend</span>
+    <span class="badge badge--tech"><i class="fa-solid fa-brain me-1"></i> NLP + TF-IDF</span>
+    <span class="badge badge--tech"><i class="fa-solid fa-server me-1"></i> MySQL DB</span>
+  </div>
+  <h1 class="hero-banner__title">AI-Assisted Fake News Detection</h1>
+  <p class="hero-banner__subtitle">
+    An intelligent verification architecture combining Natural Language Processing, TF-IDF statistical feature representations, and multi-model machine learning classifiers to detect disinformation with calibrated probability confidence.
+  </p>
+</section>
+
+<!-- Quick Analyze Card -->
+<section class="card" style="margin-bottom: 24px;">
+  <div class="card__header">
+    <div>
+      <h2 style="margin:0;"><i class="fa-solid fa-bolt text-primary me-2"></i>Quick News Authenticity Analyzer</h2>
+      <p class="muted" style="margin:4px 0 0; font-size:13.5px;">Enter a news headline, statement, or complete article body below for immediate ML classification.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <form method="post" action="{{ url_for('prediction.predict_ui') }}" class="form" id="quickAnalyzeForm">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <label class="label" for="home_news_text">News Content</label>
+      <div class="sample-pill-group" style="margin:0;">
+        <span class="text-muted" style="font-size:12px;">Try sample:</span>
+        <button type="button" class="btn-sample" onclick="loadSample('fake')"><i class="fa-solid fa-triangle-exclamation text-danger me-1"></i>Sample Fake</button>
+        <button type="button" class="btn-sample" onclick="loadSample('real')"><i class="fa-solid fa-circle-check text-success me-1"></i>Sample Real</button>
+        <button type="button" class="btn-sample" onclick="clearText()"><i class="fa-solid fa-trash me-1"></i>Clear</button>
+      </div>
+    </div>
+
+    <textarea class="textarea" id="home_news_text" name="text" rows="5" placeholder="Paste article text, press release, or claim here..." required></textarea>
+
+    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 8px;">
+      <div style="flex: 1; min-width: 240px;">
+        <label class="label" for="model_select">Classification Model</label>
+        <select class="input" id="model_select" name="model" style="cursor: pointer;">
+          <option value="logistic_regression" selected>Logistic Regression (Active Baseline - L2 Regularized)</option>
+          <option value="random_forest">Random Forest (Pending Dataset Training - 100 Trees)</option>
+          <option value="svm">Support Vector Machine (Pending Dataset Training - Linear SVM)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions" style="margin-top: 14px;">
+      <button class="btn" type="submit">
+        <i class="fa-solid fa-magnifying-glass-chart me-1"></i> Analyze News Authenticity
+      </button>
+      <a class="btn btn--secondary" href="{{ url_for('prediction.predict_ui') }}">
+        <i class="fa-solid fa-upload me-1"></i> Advanced Workspace & File Upload
+      </a>
+      <a class="btn btn--secondary" href="{{ url_for('evaluation.public_evaluation_page') }}">
+        <i class="fa-solid fa-scale-balanced me-1"></i> Benchmark Metrics
+      </a>
+    </div>
+  </form>
+</section>
+
+<!-- System Architecture & Capabilities -->
+<section style="margin-bottom: 24px;">
+  <h3 style="font-size: 1.25rem;"><i class="fa-solid fa-microchip text-primary me-2"></i>Core Architecture & Capabilities</h3>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card__icon"><i class="fa-solid fa-filter"></i></div>
+      <div class="feature-card__title">Deterministic NLP Pipeline</div>
+      <div class="feature-card__desc">
+        Cleans raw unstructured text by stripping URLs, HTML artifacts, and publisher provenance metadata (e.g., Reuters wire tags) before stopword filtering and WordNet lemmatization.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card__icon"><i class="fa-solid fa-network-wired"></i></div>
+      <div class="feature-card__title">Multi-Model Engine</div>
+      <div class="feature-card__desc">
+        Engineered for side-by-side comparative classification utilizing Logistic Regression, Random Forest Ensembles, and Platt-scaled Support Vector Classifiers (SVC).
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card__icon"><i class="fa-solid fa-percent"></i></div>
+      <div class="feature-card__title">Calibrated Confidence</div>
+      <div class="feature-card__desc">
+        Computes continuous probability distributions across REAL and FAKE categories, preventing overconfident binary decisions and providing clear statistical estimates.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card__icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <div class="feature-card__title">Enterprise Hardening</div>
+      <div class="feature-card__desc">
+        Features CSRF protection, sliding-window rate limiting, HTTPOnly session cookies, transparent password rehashing (PBKDF2 to Bcrypt), and idempotent database migrations.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4-Stage Detection Pipeline -->
+<section class="card" style="margin-bottom: 24px;">
+  <h3 style="margin-top:0;"><i class="fa-solid fa-diagram-project text-primary me-2"></i>End-to-End Detection Pipeline</h3>
+  <p class="muted" style="font-size: 13.5px;">How user text flows through the natural language processing and statistical machine learning pipeline:</p>
+
+  <div class="pipeline-steps">
+    <div class="pipeline-step">
+      <div class="pipeline-step__num">Step 01</div>
+      <div class="pipeline-step__title">Ingestion & Sanitization</div>
+      <div class="pipeline-step__desc">Text validation, URL/HTML tag stripping, and publisher header detachment.</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-step__num">Step 02</div>
+      <div class="pipeline-step__title">NLP Normalization</div>
+      <div class="pipeline-step__desc">Lowercasing, punctuation scrubbing, NLTK stopword pruning, and morphological lemmatization.</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-step__num">Step 03</div>
+      <div class="pipeline-step__title">TF-IDF Vectorization</div>
+      <div class="pipeline-step__desc">Term frequency-inverse document frequency mapping into high-dimensional n-gram feature space.</div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-step__num">Step 04</div>
+      <div class="pipeline-step__title">Model Inference & Audit</div>
+      <div class="pipeline-step__desc">Classification, probability calibration, UI rendering, and MySQL history audit trail.</div>
+    </div>
+  </div>
+</section>
+
+<!-- User & Admin Session Quick Navigation -->
+<section class="card">
+  {% if session.get('is_admin') %}
+    <div class="card__header">
+      <div>
+        <div class="muted">Logged in as Administrator</div>
+        <h3 style="margin: 4px 0 0;"><i class="fa-solid fa-user-shield text-primary me-2"></i>{{ session.get('admin_name') or 'Admin' }}</h3>
+      </div>
+      <span class="badge badge--real"><i class="fa-solid fa-lock me-1"></i>Admin Privilege</span>
+    </div>
+    <div class="divider"></div>
+    <div class="actions">
+      <a class="btn" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-gauge me-1"></i> Admin Management Dashboard</a>
+      <a class="btn btn--secondary" href="{{ url_for('evaluation.evaluation_page') }}"><i class="fa-solid fa-scale-balanced me-1"></i> Multi-Model Evaluation Audit</a>
+      <a class="btn btn--secondary" href="{{ url_for('prediction.predict_ui') }}"><i class="fa-solid fa-bolt me-1"></i> Predict Workspace</a>
+      <a class="btn btn--danger" href="{{ url_for('admin_login.admin_logout') }}"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+    </div>
+
+  {% elif session.get('user_id') %}
+    <div class="card__header">
+      <div>
+        <div class="muted">Logged in as Verified User</div>
+        <h3 style="margin: 4px 0 0;"><i class="fa-solid fa-circle-user text-primary me-2"></i>{{ session.get('username') or 'User' }}</h3>
+      </div>
+      <span class="badge badge--tech"><i class="fa-solid fa-check me-1"></i>Active Account</span>
+    </div>
+    <div class="divider"></div>
+    <div class="actions">
+      <a class="btn" href="{{ url_for('dashboard.index') }}"><i class="fa-solid fa-chart-pie me-1"></i> Analytics Dashboard</a>
+      <a class="btn btn--secondary" href="{{ url_for('prediction.predict_ui') }}"><i class="fa-solid fa-bolt me-1"></i> Make Prediction</a>
+      <a class="btn btn--secondary" href="{{ url_for('prediction.history') }}"><i class="fa-solid fa-clock-rotate-left me-1"></i> View History</a>
+      <a class="btn btn--secondary" href="{{ url_for('auth.profile') }}"><i class="fa-solid fa-user-gear me-1"></i> Account Profile</a>
+      <a class="btn btn--danger" href="{{ url_for('auth.logout') }}"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</a>
+    </div>
+
+  {% else %}
+    <div class="grid">
+      <div style="padding: 10px;">
+        <h3><i class="fa-solid fa-user me-2 text-primary"></i>User Portal</h3>
+        <p class="muted" style="font-size: 13.5px;">Sign in or create an account to track your news verification history, view dynamic dashboard charts, and export results.</p>
+        <div class="actions">
+          <a class="btn" href="{{ url_for('auth.login') }}"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i> User Login</a>
+          <a class="btn btn--secondary" href="{{ url_for('auth.register') }}"><i class="fa-solid fa-user-plus me-1"></i> Register</a>
+        </div>
+      </div>
+      <div style="padding: 10px; border-left: 1px solid var(--border);">
+        <h3><i class="fa-solid fa-user-shield me-2 text-primary"></i>Admin Portal</h3>
+        <p class="muted" style="font-size: 13.5px;">Administrative access for inspecting system datasets, managing users, and auditing multi-model machine learning benchmarks.</p>
+        <div class="actions">
+          <a class="btn btn--secondary" href="{{ url_for('admin_login.admin_login') }}"><i class="fa-solid fa-shield-halved me-1"></i> Admin Login</a>
+          <a class="btn btn--secondary" href="{{ url_for('admin_login.admin_register') }}"><i class="fa-solid fa-key me-1"></i> Admin Register</a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</section>
+
+<!-- Sample Text Injector Script -->
+<script>
+  function loadSample(type) {
+    var ta = document.getElementById('home_news_text');
+    if (!ta) return;
+    if (type === 'fake') {
+      ta.value = "SHOCKING BOMBSHELL: Secret underground military tribunal convicts high-ranking foreign diplomats of global conspiracy. Mainstream media refuses to report this suppressed breaking story!";
+    } else if (type === 'real') {
+      ta.value = "The United States Federal Reserve announced today that interest rates will remain unchanged following its two-day policy meeting, citing sustained employment figures and moderate economic growth indicators across domestic markets.";
+    }
+    ta.focus();
+  }
+
+  function clearText() {
+    var ta = document.getElementById('home_news_text');
+    if (ta) {
+      ta.value = '';
+      ta.focus();
+    }
+  }
+</script>
+{% endblock %}

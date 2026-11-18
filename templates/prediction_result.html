@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block title %}Prediction Result - Fake News Detection{% endblock %}
+
+{% block content %}
+<section class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card__header">
+    <div>
+      <h2 style="margin: 0;"><i class="fa-solid fa-square-poll-vertical text-primary me-2"></i>Analysis Result & Classification</h2>
+      <p class="muted" style="margin: 4px 0 0; font-size: 13.5px;">
+        Classification verdict, calibrated probability distribution, and NLP model metadata.
+      </p>
+    </div>
+    <div>
+      {% if result.prediction_label|upper == 'REAL' %}
+        <span class="badge badge--real badge-large">
+          <i class="fa-solid fa-circle-check me-2"></i>REAL NEWS
+        </span>
+      {% else %}
+        <span class="badge badge--fake badge-large">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>FAKE NEWS
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Primary Metrics Grid -->
+  <div class="stats" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+    <div class="stat">
+      <div class="stat__label">Classification Verdict</div>
+      <div class="stat__value" style="margin-top: 6px;">
+        {% if result.prediction_label|upper == 'REAL' %}
+          <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i>Real</span>
+        {% else %}
+          <span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Fake</span>
+        {% endif %}
+      </div>
+      <div class="muted" style="font-size: 12px; margin-top: 4px;">Primary predicted class</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat__label">Model Confidence</div>
+      <div class="stat__value text-primary" style="margin-top: 6px;">
+        {{ "%.2f"|format(result.confidence) }}%
+      </div>
+      <div class="muted" style="font-size: 12px; margin-top: 4px;">Calibrated posterior probability</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat__label">Model Utilized</div>
+      <div class="stat__value" style="font-size: 17px; font-weight: 700; margin-top: 6px;">
+        {{ result.model_used }}
+      </div>
+      <div class="muted" style="font-size: 12px; margin-top: 4px;">
+        {% if result.is_fallback %}
+          <span class="text-warning"><i class="fa-solid fa-arrow-turn-down me-1"></i>Active Fallback</span>
+        {% else %}
+          <span class="text-success"><i class="fa-solid fa-check me-1"></i>Requested Model</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat__label">Input Format</div>
+      <div class="stat__value" style="font-size: 17px; font-weight: 700; margin-top: 6px;">
+        {{ input_type or 'TEXT' }}
+      </div>
+      <div class="muted" style="font-size: 12px; margin-top: 4px;">
+        {{ input_filename or 'Direct Text Input' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Confidence Progress Bar -->
+  <div class="confidence-container">
+    <div class="confidence-header">
+      <span style="font-weight: 700; font-size: 14px;">
+        <i class="fa-solid fa-gauge-high text-primary me-1"></i> Overall Confidence Level
+      </span>
+      <span style="font-weight: 800; font-size: 16px; color: {% if result.prediction_label|upper == 'REAL' %}#22c55e{% else %}#ef4444{% endif %};">
+        {{ "%.2f"|format(result.confidence) }}%
+      </span>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill {% if result.prediction_label|upper == 'REAL' %}progress-bar-fill--real{% else %}progress-bar-fill--fake{% endif %}"
+           style="width: {{ result.confidence }}%;"></div>
+    </div>
+  </div>
+
+  <!-- Class Probability Breakdown -->
+  <div class="card" style="background: rgba(0,0,0,0.15); margin-top: 16px;">
+    <h4 style="margin: 0 0 8px; font-size: 14px;"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Class Probability Distribution</h4>
+    
+    <div style="display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 700; margin-bottom: 4px;">
+      <span class="text-success"><i class="fa-solid fa-circle me-1" style="font-size: 10px;"></i>Real News Probability: {{ "%.2f"|format(result.real_probability) }}%</span>
+      <span class="text-danger"><i class="fa-solid fa-circle me-1" style="font-size: 10px;"></i>Fake News Probability: {{ "%.2f"|format(result.fake_probability) }}%</span>
+    </div>
+
+    <div class="split-prob-track">
+      <div class="split-prob-seg--real" style="width: {{ result.real_probability }}%;" title="Real: {{ result.real_probability }}%"></div>
+      <div class="split-prob-seg--fake" style="width: {{ result.fake_probability }}%;" title="Fake: {{ result.fake_probability }}%"></div>
+    </div>
+
+    <div class="muted" style="font-size: 12px; margin-top: 8px;">
+      Probabilities derived via logistic sigmoid / Platt calibration across high-dimensional TF-IDF linguistic feature vectors.
+    </div>
+  </div>
+
+  <!-- Fallback Alert if applicable -->
+  {% if result.is_fallback %}
+    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 12px 16px; margin-top: 16px; font-size: 13px; color: #fde68a;">
+      <i class="fa-solid fa-circle-exclamation text-warning me-2"></i>
+      <strong>Model Fallback Active:</strong> You requested <code>{{ result.model_key }}</code>, but its model artifact is pending offline training. Inference safely completed using the active <strong>Logistic Regression</strong> baseline model.
+    </div>
+  {% endif %}
+
+  <!-- Input Content Preview -->
+  <div style="margin-top: 18px;">
+    <h4 style="margin: 0 0 6px; font-size: 14px;"><i class="fa-solid fa-file-lines text-primary me-2"></i>Analyzed Text Preview</h4>
+    <pre class="pre" style="max-height: 220px; font-size: 13px; line-height: 1.5;">{{ input_text_preview }}</pre>
+  </div>
+
+  <!-- Academic & Statistical Disclaimer -->
+  <div class="disclaimer-card">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <strong>Academic & Inference Disclaimer:</strong>
+    This machine learning classification represents statistical probability estimations based on semantic and stylistic patterns in trained benchmark data. It does not constitute definitive factual verification. In high-stakes journalism and real-world fact-checking, automated AI predictions must always be corroborated with established fact-checking agencies (e.g., Snopes, PolitiFact) and primary documentation.
+  </div>
+
+  <!-- Guest / Auth Info -->
+  {% if is_guest %}
+    <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 12px 16px; margin-top: 14px; font-size: 13px; color: #bfdbfe;">
+      <i class="fa-solid fa-circle-info text-primary me-2"></i>
+      <strong>Guest Notice:</strong> This prediction was generated in demonstration mode and was not saved to database history.
+      <a href="{{ url_for('auth.login') }}" style="color: #60a5fa; text-decoration: underline; font-weight: 700; margin-left: 4px;">Log In</a> or 
+      <a href="{{ url_for('auth.register') }}" style="color: #60a5fa; text-decoration: underline; font-weight: 700;">Create an Account</a> to track prediction history over time.
+    </div>
+  {% endif %}
+
+  <div class="divider"></div>
+
+  <!-- Action Buttons -->
+  <div class="actions">
+    <a class="btn" href="{{ url_for('prediction.predict_ui') }}">
+      <i class="fa-solid fa-rotate me-1"></i> Analyze Another Article
+    </a>
+    {% if not is_guest %}
+      <a class="btn btn--secondary" href="{{ url_for('prediction.history') }}">
+        <i class="fa-solid fa-clock-rotate-left me-1"></i> View Prediction History
+      </a>
+      <a class="btn btn--secondary" href="{{ url_for('dashboard.index') }}">
+        <i class="fa-solid fa-gauge me-1"></i> Dashboard Analytics
+      </a>
+    {% endif %}
+    <a class="btn btn--secondary" href="{{ url_for('evaluation.public_evaluation_page') }}">
+      <i class="fa-solid fa-scale-balanced me-1"></i> View Model Evaluation
+    </a>
+  </div>
+</section>
+{% endblock %}
