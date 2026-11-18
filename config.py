@@ -46,11 +46,22 @@ class Config:
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
 
     # ---------------- MySQL Database ----------------
-    DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
-    DB_PORT = int(os.getenv("DB_PORT", "3306"))
-    DB_USER = os.getenv("DB_USER", "root")
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-    DB_NAME = os.getenv("DB_NAME", "ai_fake_news")
+    # Supports Railway native variables (MYSQLHOST, MYSQLPORT, MYSQL_URL) and standard DB_* variables
+    _db_url = os.getenv("MYSQL_URL") or os.getenv("DATABASE_URL")
+    if _db_url and _db_url.startswith("mysql"):
+        import urllib.parse
+        _parsed = urllib.parse.urlparse(_db_url)
+        DB_HOST = _parsed.hostname or os.getenv("DB_HOST", "127.0.0.1")
+        DB_PORT = int(_parsed.port or os.getenv("DB_PORT", "3306"))
+        DB_USER = _parsed.username or os.getenv("DB_USER", "root")
+        DB_PASSWORD = urllib.parse.unquote(_parsed.password or "") if _parsed.password else os.getenv("DB_PASSWORD", "")
+        DB_NAME = _parsed.path.lstrip("/") or os.getenv("DB_NAME", "railway")
+    else:
+        DB_HOST = os.getenv("DB_HOST") or os.getenv("MYSQLHOST") or "127.0.0.1"
+        DB_PORT = int(os.getenv("DB_PORT") or os.getenv("MYSQLPORT") or "3306")
+        DB_USER = os.getenv("DB_USER") or os.getenv("MYSQLUSER") or "root"
+        DB_PASSWORD = os.getenv("DB_PASSWORD") or os.getenv("MYSQLPASSWORD") or ""
+        DB_NAME = os.getenv("DB_NAME") or os.getenv("MYSQLDATABASE") or "ai_fake_news"
     DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "10"))
 
     # ---------------- Uploads & Folders ----------------
