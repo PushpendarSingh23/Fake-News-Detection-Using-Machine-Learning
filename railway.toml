@@ -1,9 +1,5 @@
 [build]
-builder = "NIXPACKS"
-
-[variables]
-MISE_PYTHON_GITHUB_ATTESTATIONS = "false"
-MISE_GITHUB_ATTESTATIONS = "false"
+builder = "RAILPACK"
 
 [deploy]
 startCommand = "gunicorn --bind 0.0.0.0:$PORT app:app"
