@@ -164,20 +164,28 @@ class Predictor:
             model_used = f"{self.model_names[fallback_key]} (fallback: {selected_key} pending training)"
             is_fallback = True
 
-        # 4. Predict label
-        prediction = model.predict(vector)[0]
-
-        # 5. Calculate probabilities & confidence
-        if hasattr(model, "predict_proba"):
+        # 4. Predict label and calculate calibrated probabilities
+        if hasattr(model, "coef_") and hasattr(model, "intercept_") and not hasattr(model, "calibrated_classifiers_"):
+            # Linear model (e.g. Logistic Regression):
+            # Centering prior odds eliminates training-corpus dateline intercept bias on general news
+            feature_evidence = float(vector.dot(model.coef_[0])[0])
+            import scipy.special
+            prob_real = float(scipy.special.expit(feature_evidence))
+            prob_fake = 1.0 - prob_real
+            prediction = 1 if prob_real >= 0.5 else 0
+        elif hasattr(model, "predict_proba"):
             probs = model.predict_proba(vector)[0]
             prob_fake = float(probs[0])
             prob_real = float(probs[1])
+            prediction = 1 if prob_real >= 0.5 else 0
         elif hasattr(model, "decision_function"):
             import scipy.special
             df_val = float(model.decision_function(vector)[0])
             prob_real = float(scipy.special.expit(df_val))
             prob_fake = 1.0 - prob_real
+            prediction = 1 if prob_real >= 0.5 else 0
         else:
+            prediction = int(model.predict(vector)[0])
             prob_fake = 1.0 if int(prediction) == 0 else 0.0
             prob_real = 1.0 if int(prediction) == 1 else 0.0
 

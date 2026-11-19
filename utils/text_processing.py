@@ -29,11 +29,23 @@ _URL_PATTERN = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)
 _HTML_PATTERN = re.compile(r"<.*?>")
 _EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
 
-# Strip wire service headers (e.g., 'WASHINGTON (Reuters) -', 'LONDON (Reuters) -', 'NEW YORK (AP) --')
+# Strip wire service headers and publisher/blog metadata leaks
 _WIRE_SERVICE_PATTERN = re.compile(
-    r"^[A-Z\s,]+(?:\(Reuters\)|\(AP\)|\(AFP\)|\(Bloomberg\)|\(Xinhua\))\s*[-–—]+\s*",
+    r"\b(?:[A-Za-z\s,]+)?(?:\(Reuters\)|\(AP\)|\(AFP\)|\(Bloomberg\)|\(Xinhua\))\s*[-–—]+|"
+    r"\b(?:reuters|bloomberg|xinhua|breitbart|infowars|21wire|21st\s+century\s+wire)\b|"
+    r"\b(?:featured\s+image|image\s+via|getty\s+images?|pic\.twitter\.com\S*|twitter\.com\S*)\b",
     re.IGNORECASE,
 )
+
+# Common metadata and publisher shortcuts that cause spurious dataset memorization
+_SPURIOUS_TERMS: Set[str] = {
+    "reuters", "ap", "afp", "bloomberg", "xinhua", "breitbart", "infowars", "21wire",
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+    "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+    "january", "february", "march", "april", "june", "july", "august", "september", "october", "november", "december",
+    "image", "video", "watch", "photo", "picture", "featured", "getty", "com", "twitter", "pic", "wire", "21st", "century",
+    "america", "american", "said", "via",
+}
 
 _NON_ALPHANUMERIC_PATTERN = re.compile(r"[^a-z0-9\s]")
 _WHITESPACE_PATTERN = re.compile(r"\s+")
@@ -59,9 +71,9 @@ def ensure_nltk_resources() -> None:
             nltk.download(res, quiet=True)
 
     try:
-        _STOP_WORDS = set(stopwords.words("english"))
+        _STOP_WORDS = set(stopwords.words("english")).union(_SPURIOUS_TERMS)
     except Exception:
-        _STOP_WORDS = set()
+        _STOP_WORDS = set(_SPURIOUS_TERMS)
 
     _LEMMATIZER = WordNetLemmatizer()
     _RESOURCES_INITIALIZED = True

@@ -41,3 +41,5 @@ reports_exports/*
 # Raw large datasets (downloaded per instructions in README)
 dataset/*.csv
 !dataset/.gitkeep
+dataset_cache/
+models_cache/
